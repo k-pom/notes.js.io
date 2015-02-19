@@ -23,12 +23,14 @@ app_router.on('route:showUser', function(username) {
     github.getGists(username);
 });
 
-app_router.on('route:showPage', function(user, page) {
+app_router.on('route:showPage', function(username, page) {
     console.log('SHOWING PAGE FOR '+ user + " ("+page+")");
 });
 
-app_router.on('route:showPost', function(user, id) {
-    console.log('SHOWING POST FOR '+ user + " ("+id+")");
+app_router.on('route:showPost', function(username, id) {
+    console.log("SHOWING POST ID: " + id)
+    route.set({"username": username, "page": 0, "gist_id": id});
+    github.getGist(id);
 });
 
 module.exports = app_router;

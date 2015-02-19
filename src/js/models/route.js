@@ -6,7 +6,8 @@ var RouteModel = Backbone.Model.extend({
 
     defaults: {
         "username": null,
-        "page": 0
+        "page": 0,
+        "gist_id": null
     }
 });
 

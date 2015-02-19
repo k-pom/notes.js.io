@@ -20,7 +20,6 @@ var HeaderComponent = React.createClass({
     },
 
     routeChange: function(){
-
         this.setState({
             "user": route.get('username'),
             "page": route.get('page')
@@ -58,7 +57,6 @@ var HeaderComponent = React.createClass({
             )
         }
 
-
         var title = this.state.user +"'s Notes"
         document.title = title
         return (
@@ -81,6 +79,5 @@ var HeaderComponent = React.createClass({
         );
     },
 });
-
 
 module.exports = HeaderComponent;

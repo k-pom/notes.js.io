@@ -12,14 +12,15 @@ var Gist = Backbone.Model.extend({
     */
 
         this.get("markdown_file").raw_url
-
+        console.log(this);
         if(limit){
-            return "Short version..."
+            return "Short version...";
         }
 
         return "Long Version"
     }
 });
+
 
 var GistCollection = Backbone.Collection.extend({
 
@@ -35,7 +36,7 @@ var GistCollection = Backbone.Collection.extend({
             return Backbone.Collection.prototype.add.call(this, data, options);
         }
     }
-})
+});
 
 /*
     Given a object full of files, iterate through and grab the first Markdown

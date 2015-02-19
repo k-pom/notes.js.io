@@ -30919,27 +30919,52 @@ var React = require("React");
 
 var HeaderComponent = require("../components/header.js");
 var ListComponent = require("../components/list.js");
+var route = require("../models/route.js");
 
 var _ = require('underscore');
 
 var AppComponent = React.createClass({displayName: 'AppComponent',
 
+    getInitialState: function () {
+        return {"user": null}
+    },
+
+    componentDidMount: function() {
+        route.on("change", this.routeChange);
+    },
+    componentWillUnmount: function() {
+        route.off("change", this.routeChange);
+    },
+
+    routeChange: function(){
+        this.setState({
+            "user": route.get('username')
+        });
+    },
+
     render: function () {
+
+        var list;
+
+        // Only show the list if there is a user set
+        if(this.state.user){
+            list = ListComponent(null)
+        }
+
         return (
     		React.DOM.section({id: "app"}, 
                 HeaderComponent(null), 
                 React.DOM.div({className: "container"}, 
-                    ListComponent(null)
+                    list
                 )
     		)
-
         );
     }
 });
 
 module.exports = AppComponent;
 
-},{"../components/header.js":153,"../components/list.js":154,"React":146,"underscore":150}],152:[function(require,module,exports){
+},{"../components/header.js":153,"../components/list.js":154,"../models/route.js":158,"React":146,"underscore":150}],152:[function(require,module,exports){
 /** @jsx React.DOM */
 'use strict';
 
@@ -30957,6 +30982,14 @@ var GistComponent = React.createClass({displayName: 'GistComponent',
         var limit = this.props.limit;
         var gist = this.props.gist;
         var that = this;
+        var link;
+
+        if(limit){
+            link = (React.DOM.div(null, React.DOM.a({href: "#" + gist.get('owner').login + "/posts/" + gist.get('id')}, "Read the whole post")));
+        } else {
+            link = (React.DOM.div(null, React.DOM.a({href: "#" + gist.get('owner').login}, "Back to posts")))
+        }
+
         return (
             React.DOM.div({className: "blog-post"}, 
                 React.DOM.div({className: "container"}, 
@@ -30971,18 +31004,13 @@ var GistComponent = React.createClass({displayName: 'GistComponent',
                         )
                     )
                 ), React.DOM.div({className: "blog-data"}, 
-                    React.DOM.div({className: "condensed"}, 
-                        gist.parsed(limit)
-                    ), 
-
-                    "... ", 
-                    React.DOM.a({href: "#"}, "Read the whole post")
+                    gist.parsed(limit), 
+                    link
                 )
             )
         );
     }
 });
-
 
 module.exports = GistComponent;
 
@@ -31009,7 +31037,6 @@ var HeaderComponent = React.createClass({displayName: 'HeaderComponent',
     },
 
     routeChange: function(){
-
         this.setState({
             "user": route.get('username'),
             "page": route.get('page')
@@ -31047,7 +31074,6 @@ var HeaderComponent = React.createClass({displayName: 'HeaderComponent',
             )
         }
 
-
         var title = this.state.user +"'s Notes"
         document.title = title
         return (
@@ -31070,7 +31096,6 @@ var HeaderComponent = React.createClass({displayName: 'HeaderComponent',
         );
     },
 });
-
 
 module.exports = HeaderComponent;
 
@@ -31103,20 +31128,19 @@ var GistList = React.createClass({displayName: 'GistList',
 
     render: function () {
         if(this.state.gists.length == 0){
-            return (React.DOM.div(null, "No gists"))
+            return (React.DOM.div(null, "No gists found"))
         }
 
         if(this.state.gists.length == 1){
-            console.log(this.state.gists)
-            return GistComponent({key: this.state.gists[0].id, gist: this.state.gists[0]})
+            var first = this.state.gists.first();
+            return GistComponent({key: first.get('id'), gist: first})
         }
 
-        console.log("RENDERING LIST")
         var gistList = this.state.gists.map(function (gist) {
             return (GistComponent({key: gist.id, gist: gist, limit: "300"}));
         });
 
-        return (React.DOM.div(null, "LIST", gistList));
+        return (React.DOM.div(null, gistList));
     }
 });
 
@@ -31131,11 +31155,21 @@ var gists = require("../models/gists.js");
 var github = {
 
     getGists: function (username) {
+
         gists.reset([], {silent: true})
         $.get("https://api.github.com/users/" + username + "/gists",function(response){
             _.each(response, function(data){
                 gists.add(data, {silent: true});
             })
+            gists.trigger("change");
+        })
+    },
+
+    getGist: function(id) {
+
+        gists.reset([], {silent: true})
+        $.get("https://api.github.com/gists/" + id,function(response){
+            gists.add(response, {silent: true});
             gists.trigger("change");
         })
     }
@@ -31170,12 +31204,14 @@ app_router.on('route:showUser', function(username) {
     github.getGists(username);
 });
 
-app_router.on('route:showPage', function(user, page) {
+app_router.on('route:showPage', function(username, page) {
     console.log('SHOWING PAGE FOR '+ user + " ("+page+")");
 });
 
-app_router.on('route:showPost', function(user, id) {
-    console.log('SHOWING POST FOR '+ user + " ("+id+")");
+app_router.on('route:showPost', function(username, id) {
+    console.log("SHOWING POST ID: " + id)
+    route.set({"username": username, "page": 0, "gist_id": id});
+    github.getGist(id);
 });
 
 module.exports = app_router;
@@ -31195,14 +31231,15 @@ var Gist = Backbone.Model.extend({
     */
 
         this.get("markdown_file").raw_url
-
+        console.log(this);
         if(limit){
-            return "Short version..."
+            return "Short version...";
         }
 
         return "Long Version"
     }
 });
+
 
 var GistCollection = Backbone.Collection.extend({
 
@@ -31218,7 +31255,7 @@ var GistCollection = Backbone.Collection.extend({
             return Backbone.Collection.prototype.add.call(this, data, options);
         }
     }
-})
+});
 
 /*
     Given a object full of files, iterate through and grab the first Markdown
@@ -31247,7 +31284,8 @@ var RouteModel = Backbone.Model.extend({
 
     defaults: {
         "username": null,
-        "page": 0
+        "page": 0,
+        "gist_id": null
     }
 });
 

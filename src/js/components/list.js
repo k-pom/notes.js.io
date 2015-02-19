@@ -26,20 +26,19 @@ var GistList = React.createClass({
 
     render: function () {
         if(this.state.gists.length == 0){
-            return (<div>No gists</div>)
+            return (<div>No gists found</div>)
         }
 
         if(this.state.gists.length == 1){
-            console.log(this.state.gists)
-            return <GistComponent key={this.state.gists[0].id} gist={this.state.gists[0]}/>
+            var first = this.state.gists.first();
+            return <GistComponent key={first.get('id')} gist={first}/>
         }
 
-        console.log("RENDERING LIST")
         var gistList = this.state.gists.map(function (gist) {
             return (<GistComponent key={gist.id} gist={gist} limit="300"/>);
         });
 
-        return (<div>LIST{gistList}</div>);
+        return (<div>{gistList}</div>);
     }
 });
 

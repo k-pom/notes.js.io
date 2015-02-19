@@ -15,6 +15,14 @@ var GistComponent = React.createClass({
         var limit = this.props.limit;
         var gist = this.props.gist;
         var that = this;
+        var link;
+
+        if(limit){
+            link = (<div><a href={"#" + gist.get('owner').login + "/posts/" + gist.get('id')}>Read the whole post</a></div>);
+        } else {
+            link = (<div><a href={"#" + gist.get('owner').login}>Back to posts</a></div>)
+        }
+
         return (
             <div className="blog-post">
                 <div className='container'>
@@ -29,17 +37,12 @@ var GistComponent = React.createClass({
                         </p>
                     </div>
                 </div><div className='blog-data'>
-                    <div className='condensed'>
-                        {gist.parsed(limit)}
-                    </div>
-
-                    ...&nbsp;
-                    <a href="#">Read the whole post</a>
+                    {gist.parsed(limit)}
+                    {link}
                 </div>
             </div>
         );
     }
 });
-
 
 module.exports = GistComponent;
